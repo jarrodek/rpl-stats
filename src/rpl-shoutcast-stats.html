@@ -1,0 +1,107 @@
+<!--
+@license
+Copyright 2017 Pawel Psztyc <jarrodek@gmail.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../bower_components/app-layout/app-header-layout/app-header-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-scroll-effects/app-scroll-effects.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="app-styles.html">
+<link rel="import" href="stats-view.html">
+<link rel="import" href="view404.html">
+<link rel="import" href="add-server.html">
+<link rel="import" href="data-processor.html">
+<link rel="import" href="app-icons.html">
+
+<dom-module id="rpl-shoutcast-stats">
+  <template>
+    <style>
+    :host {
+      --app-primary-color: #0081d9;
+      --app-secondary-color: black;
+      /*--app-header-background-front-layer: yellow;*/
+
+      display: block;
+    }
+
+    app-toolbar,
+    app-header {
+      background-color:  var(--app-primary-color);
+      color: #fff;
+    }
+
+    iron-pages {
+      height: 100%;
+    }
+
+    iron-pages > * {
+      height: 100%;
+    }
+
+    </style>
+    <app-location route="{{route}}"></app-location>
+    <app-route route="{{route}}" pattern="/:page" data="{{routeData}}" tail="{{subroute}}"></app-route>
+    <app-route route="{{subroute}}" pattern="/:path" data="{{subrouteData}}"></app-route>
+    <app-header-layout has-scrolling-region fullbleed>
+      <app-header condenses reveals effects="waterfall">
+        <app-toolbar>
+          <div main-title>RPL shoutcast stats</div>
+        </app-toolbar>
+      </app-header>
+      <iron-pages selected="[[page]]" attr-for-selected="name" fallback-selection="view404" role="main">
+        <stats-view name="stats-view" servers="{{servers}}" has-servers="{{hasServers}}"></stats-view>
+        <view-404 name="view404"></view-404>
+        <add-server name="add-server"></add-server>
+      </iron-pages>
+    </app-header-layout>
+    <data-processor servers="{{servers}}"></data-processor>
+  </template>
+  <script>
+  Polymer({
+    is: 'rpl-shoutcast-stats',
+
+    properties: {
+      page: {
+        type: String,
+        reflectToAttribute: true
+      },
+      servers: Array,
+      hasServers: Boolean
+    },
+
+    listeners: {
+      'navigate': '_navigate'
+    },
+
+    observers: [
+      '_routePageChanged(routeData.page)'
+    ],
+
+    _routePageChanged: function(page) {
+      if (page === 'home') {
+        page = 'stats-view';
+      }
+      this.page = page || 'stats-view';
+    },
+
+    // An event handler for tap / click on navigation events.
+    _navigate: function(e) {
+      this.set('route.path', e.detail.url);
+    }
+
+  });
+  </script>
+</dom-module>

@@ -1,0 +1,115 @@
+<!--
+@license
+Copyright 2017 Pawel Psztyc <jarrodek@gmail.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-masked-input/paper-masked-input.html">
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
+<link rel="import" href="../bower_components/app-pouchdb/app-pouchdb-document.html">
+
+<dom-module id="add-server">
+  <template>
+    <style>
+    :host {
+      display: block;
+      margin: 0 24px;
+    }
+
+    h1 {
+      @apply(--paper-font-headline);
+    }
+    </style>
+    <h1>Add new server</h1>
+    <form is="iron-form" id="form" on-iron-form-presubmit="_formSubmit">
+      <paper-input label="Server address" value="{{host}}" name="host" on-paste="_hostPaste" required auto-validate></paper-input>
+      <paper-input label="Server port" value="{{port}}" name="port" type="number" required auto-validate></paper-input>
+      <paper-masked-input label="Admin password" name="password" required auto-validate></paper-masked-input>
+      <div class="actions">
+        <paper-button on-tap="cancel">cancel</paper-button>
+        <paper-button raised on-tap="submit">Save</paper-button>
+      </div>
+    </form>
+    <app-pouchdb-document db-name="servers" doc-id="[[docId]]" data="{{data}}"></app-pouchdb-document>
+  </template>
+  <script>
+    Polymer({
+      is: 'add-server',
+
+      properties: {
+        host: String,
+        port: Number,
+        docId: String,
+        data: Object
+      },
+
+      listeners: {
+        'iron-form-submit': '_formSubmit'
+      },
+
+      _formSubmit: function(event) {
+        event.preventDefault();
+        var data = this.$.form.serialize();
+
+        var doc = this.$$('app-pouchdb-document');
+        doc.reset();
+        this.docId = data.host + '-' + data.port;
+        //doc.initializeStoredValue()
+        doc.transactionsComplete
+        .then(() => {
+          var oldData = doc.data || {};
+          data = Object.assign(oldData, data);
+          this.data = data;
+          return doc.save();
+        })
+        // this.$$('app-pouchdb-document').transactionsComplete
+        .then(() => {
+          this.fire('server-added', {
+            _id: this.docId
+          });
+          this.fire('navigate', {
+            url: '/stats-view'
+          });
+        });
+      },
+
+      submit: function() {
+        this.$.form.submit();
+      },
+
+      cancel: function() {
+        this.fire('navigate', {
+          url: '/stats-view'
+        });
+      },
+
+      _hostPaste: function(e) {
+        var data = e.clipboardData.getData('text/plain');
+        if (!data) {
+          return;
+        }
+        data = data.trim();
+        var parts = data.split(':');
+        if (parts.length !== 2) {
+          return;
+        }
+        var host = parts[0];
+        var port = Number(parts[1]);
+        if (port !== port) {
+          return;
+        }
+        this.host = host;
+        this.port = port;
+        e.preventDefault();
+      }
+    });
+  </script>
+</dom-module>

@@ -1,0 +1,267 @@
+<!--
+@license
+Copyright 2017 Pawel Psztyc <jarrodek@gmail.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
+
+<dom-module id="servers-list">
+  <template>
+    <style>
+    :host {
+      display: block;
+    }
+
+    :host([hidden]) {
+      display: none;
+    }
+
+    .table {
+      @apply(--paper-font-body1);
+      color: rgba(0, 0, 0, 0.87);
+      font-size: 13px;
+    }
+
+    .row.header {
+      color: rgba(0, 0, 0, 0.54);
+      font-size: 12px;
+      height: 56px;
+      font-weight: 500;
+    }
+
+    .numeric {
+      text-align: right;
+    }
+
+    .row {
+      @apply(--layout-horizontal);
+      @apply(--layout-center);
+      height: 48px;
+    }
+
+    .row:not(.header):hover {
+      background-color: #EEEEEE;
+    }
+
+    .row.selected {
+      background-color: #F5F5F5;
+    }
+
+    .card-title {
+      @apply(--layout-horizontal);
+      @apply(--layout-center);
+      height: 64px;
+    }
+
+    .card-title h2 {
+      @apply(--paper-font-title);
+      padding: 0 24px;
+    }
+
+    .row>div {
+      margin-right: 24px;
+    }
+
+    .row>div.numeric {
+      margin-right: 56px;
+      width: 52px;
+    }
+
+    div.average-listen-time.numeric {
+      width: 124px;
+    }
+
+    .row-checkbox {
+      padding: 0 24px;
+    }
+
+    .server-name {
+      @apply(--layout-flex);
+      @apply(--layout-horizontal);
+      @apply(--layout-center);
+    }
+
+    paper-button {
+      color: var(--accent-color);
+    }
+
+    .real-value {
+      color: rgba(0, 0, 0, 0.54);
+    }
+
+    .warning {
+      color: #FF9800;
+      width: 20px;
+      height: 20px;
+      margin-left: 12px;
+      cursor: pointer;
+    }
+    </style>
+    <div class="table">
+      <div class="card-title">
+        <paper-button on-tap="addServer">Add</paper-button>
+        <paper-button on-tap="removeSelected">Remove</paper-button>
+      </div>
+      <div class="row header">
+        <div class="row-checkbox">
+          <paper-checkbox class="all" on-iron-change="_toggleAllSelected"></paper-checkbox>
+        </div>
+        <div class="server-name">Server</div>
+        <div class="current-listeners numeric">Current</div>
+        <div class="peak-listeners numeric">Peak</div>
+        <div class="average-listen-time numeric">Avg time</div>
+      </div>
+      <template is="dom-repeat" items="[[stats]]" id="list">
+        <div class$="row [[_computeRowClass(item.selected)]]">
+          <div class="row-checkbox">
+            <paper-checkbox class="row-selector" checked="{{item.selected}}" on-iron-change="_toggleItemSelected"></paper-checkbox>
+          </div>
+          <div class="server-name">
+            <span>[[item.host]]:[[item.port]]</span>
+            <span hidden$="[[!item.error]]"><iron-icon icon="rpl-icons:warning" class="warning" title="Error getting stats" on-tap="_showWarning"></iron-icon></span>
+          </div>
+          <div class="current-listeners numeric">[[_getStatsValue(item.*, 'currentListeners')]] <span class="real-value">([[_getStatsRealValue(item.*, 'ru')]])</span></div>
+          <div class="peak-listeners numeric">[[_getStatsValue(item.*, 'peakListeners')]]</div>
+          <div class="average-listen-time numeric">[[_getStatsValueTime(item.*, 'avgTime')]] <span class="real-value">([[_getStatsRealValueTime(item.*, 'rat')]])</span></div>
+        </div>
+      </template>
+    </div>
+    <array-selector id="selector" items="{{stats}}" selected="{{selected}}" multi toggle></array-selector>
+    <paper-toast id="removeEmptySelection" text="Select servers to be removed"></paper-toast>
+    <paper-dialog id="errorDialog">
+      <h2>Error</h2>
+      <paper-dialog-scrollable><div id="errorMessage"></div></paper-dialog-scrollable>
+      <div class="buttons">
+        <paper-button dialog-dismiss autofocus>Close</paper-button>
+      </div>
+    </paper-dialog>
+  </template>
+  <script>
+  Polymer({
+    is: 'servers-list',
+    properties: {
+      // List of selected list items
+      selected: Array,
+      //
+      stats: Array
+    },
+
+    // Navigates to the add-server page
+    addServer: function() {
+      this.fire('navigate', {
+        url: '/add-server'
+      });
+    },
+
+    // Removes selected servers from the store.
+    removeSelected: function() {
+      var selected = this.selected;
+      if (!selected || !selected.length) {
+        this.$.removeEmptySelection.opened = true;
+        return;
+      }
+      selected = selected.filter((i) => !!i);
+      this.fire('delete-servers', {
+        servers: selected
+      });
+    },
+    // Toggle server selection.
+    _toggleItemSelected: function(e) {
+      var item = this.$.list.itemForElement(e.target);
+      if (!item) {
+        return;
+      }
+      this.$.selector.select(item);
+    },
+    // Toggles all elements on the list
+    _toggleAllSelected: function(e) {
+      var state = e.target.checked;
+      var hasSelection = !!(this.selected && this.selected.length);
+      if (!state && hasSelection) {
+        Polymer.dom(this.root)
+          .querySelectorAll('paper-checkbox.row-selector[checked]')
+          .forEach((item) => {
+            item.checked = false;
+          });
+        // this.$.selector.clearSelection();
+      } else if (state) {
+        if (!this.stats || !this.stats.length) {
+          return;
+        }
+        Polymer.dom(this.root)
+          .querySelectorAll('paper-checkbox.row-selector:not([checked])')
+          .forEach((item) => {
+            item.checked = true;
+          });
+      }
+    },
+
+    _getStatsValue: function(record, property) {
+      if (!record || !record.base || !record.base.stats) {
+        return 0;
+      }
+      return record.base.stats[property] || 0;
+    },
+
+    _getStatsValueTime: function(record, property) {
+      var time = this._getStatsValue(record, property);
+      if (!time) {
+        return time;
+      }
+      var hours = Math.floor(time / 3600);
+      time = time - hours * 3600;
+      var minutes = Math.floor(time / 60);
+      var seconds = time - minutes * 60;
+      return hours + ':' + minutes + ':' + seconds;
+    },
+
+    _getStatsRealValue: function(record, property) {
+      if (!record || !record.base || !record.base.stats || !record.base.stats.rs) {
+        return 0;
+      }
+      return record.base.stats.rs[property] || 0;
+    },
+
+    _getStatsRealValueTime: function(record, property) {
+      var time = this._getStatsRealValue(record, property);
+      if (!time) {
+        return time;
+      }
+      var hours = Math.floor(time / 3600);
+      time = time - hours * 3600;
+      var minutes = Math.floor(time / 60);
+      var seconds = time - minutes * 60;
+      return hours + ':' + minutes + ':' + seconds;
+    },
+
+    _computeRowClass: function(selected) {
+      if (selected) {
+        return 'selected';
+      }
+      return '';
+    },
+
+    _showWarning: function(e) {
+      var item = this.$.list.itemForElement(e.target);
+      if (!item) {
+        return;
+      }
+      this.$.errorMessage.innerText = item.error;
+      this.$.errorDialog.opened = true;
+    }
+  });
+  </script>
+</dom-module>

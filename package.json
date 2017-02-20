@@ -1,0 +1,35 @@
+{
+  "name": "rpl-shoutcats-stats",
+  "version": "1.0.0",
+  "description": "Radio Polska Live! shoutcast stats reported application.",
+  "main": "main.js",
+  "scripts": {
+    "postinstall": "install-app-deps",
+    "start": "electron .",
+    "dist": "./node_modules/.bin/electron-packager . --all --out=build --asar"
+  },
+  "author": "Pawel Psztyc",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "devtron": "^1.4.0",
+    "electron": "^1.4.1",
+    "electron-inspector": "^0.1.4",
+    "electron-packager": "^8.5.2",
+    "electron-rebuild": "^1.5.7"
+  },
+  "productName": "RPL-stats",
+  "build": {
+    "appId": "com.polskalive.shoutcast-stats",
+    "copyright": "Copyright © Pawel Psztyc",
+    "productName": "RPL stoutcast stats",
+    "category": "public.app-category.production-tools",
+    "asar": true,
+    "files": [
+      "out",
+      "node_modules"
+    ],
+    "win": {
+      "iconUrl": "http://polskalive.pl/wp-content/uploads/2016/10/pl-logo.png"
+    }
+  }
+}

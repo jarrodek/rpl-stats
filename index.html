@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+  <title>RML shoutcast stats</title>
+  <meta name="description" content="Showcast stats">
+  <!-- See https://goo.gl/qRE0vM -->
+  <meta name="theme-color" content="#3f51b5">
+  <script>
+  window.Polymer = {
+    dom: 'shadow',
+    lazyRegister: false
+  };
+  </script>
+  <link rel="import" href="src/rpl-shoutcast-stats.html">
+  <style>
+  html,
+  body {
+    height: 100%;
+    background-color: #fff;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Roboto', 'Noto', sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  </style>
+</head>
+
+<body>
+  <rpl-shoutcast-stats></rpl-shoutcast-stats>
+</body>
+
+</html>
