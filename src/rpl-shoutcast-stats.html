@@ -52,9 +52,6 @@ the License.
     }
 
     </style>
-    <app-location route="{{route}}"></app-location>
-    <app-route route="{{route}}" pattern="/:page" data="{{routeData}}" tail="{{subroute}}"></app-route>
-    <app-route route="{{subroute}}" pattern="/:path" data="{{subrouteData}}"></app-route>
     <app-header-layout has-scrolling-region fullbleed>
       <app-header condenses reveals effects="waterfall">
         <app-toolbar>
@@ -76,7 +73,8 @@ the License.
     properties: {
       page: {
         type: String,
-        reflectToAttribute: true
+        reflectToAttribute: true,
+        value: 'stats-view'
       },
       servers: Array,
       hasServers: Boolean
@@ -86,20 +84,9 @@ the License.
       'navigate': '_navigate'
     },
 
-    observers: [
-      '_routePageChanged(routeData.page)'
-    ],
-
-    _routePageChanged: function(page) {
-      if (page === 'home') {
-        page = 'stats-view';
-      }
-      this.page = page || 'stats-view';
-    },
-
     // An event handler for tap / click on navigation events.
     _navigate: function(e) {
-      this.set('route.path', e.detail.url);
+      this.set('page', e.detail.url);
     }
 
   });

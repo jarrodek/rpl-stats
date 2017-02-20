@@ -12,6 +12,7 @@ License for the specific language governing permissions and limitations under
 the License.
 -->
 <link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
 
 <dom-module id="view-404">
   <template>
@@ -23,12 +24,19 @@ the License.
       }
     </style>
 
-    Oops you hit a 404. <a href="/">Head back to home.</a>
+    Screen do not exists. <paper-button raised on-tap="back">Go to main page</paper-button>
+
   </template>
 
   <script>
     Polymer({
-      is: 'view-404'
+      is: 'view-404',
+
+      back: function() {
+        this.fire('navigate', {
+          url: 'stats-view'
+        });
+      }
     });
   </script>
 </dom-module>

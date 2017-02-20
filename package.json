@@ -6,16 +6,14 @@
   "scripts": {
     "postinstall": "install-app-deps",
     "start": "electron .",
-    "dist": "./node_modules/.bin/electron-packager . --all --out=build --asar"
+    "build": "electron-packager . --all --out=build --asar --app-copyright=\"Pawel Psztyc\" --arch=ia32,x64 --platform=win32 --win32metadata.CompanyName=\"Fashion Studio\" --win32metadata.ProductName=\"RPL stats\""
   },
   "author": "Pawel Psztyc",
   "license": "Apache-2.0",
   "devDependencies": {
     "devtron": "^1.4.0",
     "electron": "^1.4.1",
-    "electron-inspector": "^0.1.4",
-    "electron-packager": "^8.5.2",
-    "electron-rebuild": "^1.5.7"
+    "electron-packager": "^8.5.2"
   },
   "productName": "RPL-stats",
   "build": {
